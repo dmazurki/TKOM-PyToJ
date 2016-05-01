@@ -1,26 +1,26 @@
 import ply.lex as lex
 
-keywords = (
-    'and',
-    'break',
-    'class',
-    'continue',
-    'def',
-    'elif',
-    'else',
-    'for',
-    'from',
-    'import',
-    'if',
-    'is',
-    'not',
-    'or',
-    'pass',
-    'print',
-    'return',
-    'while'
-)
-tokens = keywords + (
+keywords = {
+    'and': 'AND',
+    'break': 'BREAK',
+    'class': 'CLASS',
+    'continue': 'CONTINUE',
+    'def': 'DEF',
+    'elif': 'ELIF',
+    'else': 'ELSE',
+    'for': 'FOR',
+    'from': 'FROM',
+    'import': 'IMPORT',
+    'if': 'IF',
+    'is': 'IS',
+    'not': 'NOT',
+    'or': 'OR',
+    'pass': 'PASS',
+    'print': 'PRINT',
+    'return': 'RETURN',
+    'while': 'WHILE'
+}
+tokens = keywords.values() + [
     'IDENTIFIER',
     'NEWLINE',
     'INDENT',
@@ -63,13 +63,12 @@ tokens = keywords + (
     'ASTERISK_ASSIGNMENT',
     'SLASH_ASSIGNMENT',
     'PERCENT_ASSIGNMENT'
-)
+]
 
 
 def t_IDENTIFIER(t):
     r'[a-zA-Z_][a-zA-Z_0-9]*'
-    if t.value in keywords:
-        t.type = t.value
+    t.type = keywords.get(t.value, 'IDENTIFIER')
     return t
 
 
@@ -115,9 +114,11 @@ pointfloat = r'((([0-9]*\.[0-9]+)|([0-9]+\.))' + exponent + '?)'
 exponentfloat = r'(([0-9]+)' + exponent + ')'
 floatnumber = r'' + pointfloat + '|' + exponentfloat
 
+
 @lex.TOKEN(floatnumber)
 def t_FLOATING_POINT_LITERAL(t):
     return t
+
 
 t_PLUS = r'\+'
 t_LT = r'<'
