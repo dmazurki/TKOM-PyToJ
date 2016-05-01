@@ -111,10 +111,9 @@ def t_STRING_LITERAL(t):
 t_INTEGER_LITERAL = r'([0-9]+)'
 
 exponent = r'((e|E)[+-]?[0-9]+)'
-pointfloat = r'((([0-9]*\.[0-9]+)|([0-9]*\.))' + exponent + '?)'
+pointfloat = r'((([0-9]*\.[0-9]+)|([0-9]+\.))' + exponent + '?)'
 exponentfloat = r'(([0-9]+)' + exponent + ')'
 floatnumber = r'' + pointfloat + '|' + exponentfloat
-
 
 @lex.TOKEN(floatnumber)
 def t_FLOATING_POINT_LITERAL(t):
