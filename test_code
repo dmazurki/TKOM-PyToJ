@@ -1,8 +1,5 @@
-a+1 >= b*3+3 or not a+5
-a if c>2 else 5 pass pass
-x.y = c.fun(d, f + 3 if a>0 else 3)
-x.y*=3*3
-print a, d(x-2)
-break
-continue
-return a+5*x
+
+while n>0:
+ n=n-1
+ a*=b
+else: print a

@@ -78,7 +78,7 @@ class PositionalArguments:
         self.argument_list.append(new_arg)
 
     def __str__(self):
-        return str(self.argument_list)
+        return ', '.join([str(x) for x in self.argument_list])
 
 
 class Call:
@@ -87,7 +87,7 @@ class Call:
         self.arguments = arguments
 
     def __str__(self):
-        return str(self.caller) + '(' + ', '.join([str(x) for x in self.arguments.argument_list]) + ')'
+        return str(self.caller) + '(' + str(self.arguments) + ')'
 
 
 class Assignment:
@@ -144,3 +144,38 @@ class ContinueStmt:
 
     def __str__(self):
         return 'continue'
+
+class StmtList:
+    def __init__(self, first_statement=None):
+        if first_statement is None:
+            self.statement_list = []
+        else:
+            self.statement_list = [first_statement]
+
+    def addStmt(self, new_stmt):
+        self.statement_list.append(new_stmt)
+
+    def __str__(self):
+        return  ', '.join([str(x) for x in self.statement_list])
+
+class IndentedStmtList:
+    def __init__(self, first_statement=None):
+        if first_statement is None:
+            self.statement_list = []
+        else:
+            self.statement_list = [first_statement]
+
+    def addStmt(self, new_stmt):
+        self.statement_list.append(new_stmt)
+
+    def __str__(self):
+        return  '\n<INDENT>\n'+'\n'.join([str(x) for x in self.statement_list]) + '\n<DEDENT>\n'
+
+class WhileStmt:
+    def __init__(self, condition, suite, else_suite=None):
+        self.condition = condition
+        self.suite = suite
+        self.else_suite = else_suite
+
+    def __str__(self):
+        return 'while ' + str(self.condition) + ' : ' + str(self.suite) + (' else: '+str(self.else_suite) if self.else_suite is not None else ' ')

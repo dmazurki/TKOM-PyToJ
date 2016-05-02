@@ -1,14 +1,15 @@
 import ply.yacc as yacc
-from ptj_lex import tokens
+import ptj_lex
 import ptj_parse_model
 
 start = 'program'
 
+tokens = ptj_lex.tokens
 
 def p_program(p):
     """program : NEWLINE
-               | simple_stmt
-               | program simple_stmt
+               | compound_stmt
+               | program compound_stmt
                | program NEWLINE"""
     if len(p) == 2 and p[1] != '\n':
         p[0] = ptj_parse_model.Program(p[1])
@@ -210,6 +211,54 @@ def p_break_stmt(p):
     """break_stmt : BREAK"""
     p[0] = ptj_parse_model.BreakStmt()
 
+
+def p_compound_stmt(p):
+    """compound_stmt : expression
+                     | while_stmt"""
+    p[0] = p[1]
+
+def p_suite(p):
+    """suite : stmt_list NEWLINE
+             | NEWLINE INDENT indented_stmt_list DEDENT"""
+    if len(p) == 3:
+        p[0] = p[1]
+    else:
+        p[0] = p[3]
+
+def p_statement(p):
+    """statement : stmt_list NEWLINE
+                 | compound_stmt"""
+    p[0] = p[1]
+
+def p_indented_stmt_list(p):
+    """indented_stmt_list : statement
+                          | indented_stmt_list statement"""
+    if len(p) == 2:
+        p[0] = ptj_parse_model.IndentedStmtList(p[1])
+    else:
+        p[1].addStmt(p[2])
+        p[0] = p[1]
+
+def p_stmt_list(p):
+    """stmt_list : simple_stmt
+                 | stmt_list SEMICOLON simple_stmt"""
+    if len(p) == 2 or len(p) == 3:
+        p[0] = ptj_parse_model.StmtList(p[1])
+    else:
+        p[1].addStmt(p[3])
+        p[0] = p[1]
+
+def p_while_stmt(p):
+    """while_stmt : WHILE expression COLON suite
+                  | WHILE expression COLON suite ELSE COLON suite"""
+    if len(p) == 5:
+        p[0] = ptj_parse_model.WhileStmt(p[2], p[4], None)
+    else:
+        p[0] = ptj_parse_model.WhileStmt(p[2], p[4], p[7])
+
+
+
+
 def p_error(p):
     if p:
         print("Syntax error at token", p.type)
@@ -224,5 +273,7 @@ parser = yacc.yacc()
 
 if __name__ == '__main__':
     code = open('test_code')
-    result = parser.parse(code.read())
+    result = parser.parse(code.read(), lexer=ptj_lex.ptj_lexer)
     print str(result)
+
+

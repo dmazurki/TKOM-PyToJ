@@ -72,19 +72,20 @@ def t_IDENTIFIER(t):
     return t
 
 
-indentStack = [0]
+indent_stack = [0]
+
 
 
 def t_NEWLINE(t):
     r'\n[ ]*'
     indentLength = len(t.value) - 1
-    lastIndent = indentStack[-1]
+    lastIndent = indent_stack[-1]
 
     if indentLength > lastIndent:
-        indentStack.append(indentLength)
+        indent_stack.append(indentLength)
         t.type = "INDENT"
     elif indentLength < lastIndent:
-        while indentStack[-1] > indentLength: indentStack.pop()
+        while indent_stack[-1] > indentLength: indent_stack.pop()
         t.type = "DEDENT"
     else:
         t.type = "NEWLINE"
@@ -164,7 +165,53 @@ t_ignore = ' \t'
 
 
 def resetLexer():
-    del indentStack[1:]
+    del indent_stack[1:]
+
+class PtjLexer():
+    def __init__(self):
+        self.lexer = lex.lex()
+        self.indenting = None
+
+    def token(self):
+        if self.indenting is not None:
+            ret = self.indenting
+            self.indenting = None
+            return ret
+
+        tok = self.lexer.token()
+        if tok is None:
+            return tok
+
+        if tok.type == 'INDENT' or tok.type == 'DEDENT':
+            newtok = lex.LexToken()
+            newtok.value = tok.value
+            newtok.type = tok.type
+            newtok.lineno = tok.lineno
+            newtok.lexpos = tok.lexpos
+            self.indenting = newtok
+
+            tok.type = 'NEWLINE'
+            tok.value = '\n'
+
+        return tok
+
+    def input(self, code):
+        self.lexer.input(code)
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        t = self.token()
+        if t is None:
+            raise StopIteration
+        return t
+
+ptj_lexer = PtjLexer()
 
 
-lexer = lex.lex()
+if __name__ == '__main__':
+    code = open('test_code')
+    ptj_lexer.input(code.read())
+    for tok in ptj_lexer:
+        print str(tok)
