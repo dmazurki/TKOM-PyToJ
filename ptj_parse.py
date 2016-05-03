@@ -214,7 +214,8 @@ def p_break_stmt(p):
 
 def p_compound_stmt(p):
     """compound_stmt : expression
-                     | while_stmt"""
+                     | while_stmt
+                     | if_stmt"""
     p[0] = p[1]
 
 def p_suite(p):
@@ -256,8 +257,28 @@ def p_while_stmt(p):
     else:
         p[0] = ptj_parse_model.WhileStmt(p[2], p[4], p[7])
 
+def p_if_stmt(p):
+    """if_stmt : IF expression COLON suite
+               | IF expression COLON suite ELSE COLON suite
+               | IF expression COLON suite elifs
+               | IF expression COLON suite elifs ELSE COLON suite"""
+    if len(p) == 5:
+        p[0] = ptj_parse_model.IfStmt([(p[2], p[4])])
+    elif len(p) == 6:
+        p[0] = ptj_parse_model.IfStmt([(p[2], p[4])]+p[5])
+    elif len(p) == 8:
+        p[0] = ptj_parse_model.IfStmt([(p[2], p[4])], p[7])
+    elif len(p) == 9:
+        p[0] = ptj_parse_model.IfStmt([(p[2], p[4])] + p[5], p[8])
 
 
+def p_elifs(p):
+    """elifs : ELIF expression COLON suite
+             | elifs ELIF expression COLON suite"""
+    if len(p) == 5:
+        p[0] = [(p[2], p[4])]
+    else:
+        p[0] = p[1] + [(p[3], p[5])]
 
 def p_error(p):
     if p:

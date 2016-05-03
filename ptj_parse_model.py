@@ -145,6 +145,7 @@ class ContinueStmt:
     def __str__(self):
         return 'continue'
 
+
 class StmtList:
     def __init__(self, first_statement=None):
         if first_statement is None:
@@ -156,7 +157,8 @@ class StmtList:
         self.statement_list.append(new_stmt)
 
     def __str__(self):
-        return  ', '.join([str(x) for x in self.statement_list])
+        return ', '.join([str(x) for x in self.statement_list])
+
 
 class IndentedStmtList:
     def __init__(self, first_statement=None):
@@ -169,7 +171,8 @@ class IndentedStmtList:
         self.statement_list.append(new_stmt)
 
     def __str__(self):
-        return  '\n<INDENT>\n'+'\n'.join([str(x) for x in self.statement_list]) + '\n<DEDENT>\n'
+        return '\n<INDENT>\n' + '\n'.join([str(x) for x in self.statement_list]) + '\n<DEDENT>\n'
+
 
 class WhileStmt:
     def __init__(self, condition, suite, else_suite=None):
@@ -178,4 +181,27 @@ class WhileStmt:
         self.else_suite = else_suite
 
     def __str__(self):
-        return 'while ' + str(self.condition) + ' : ' + str(self.suite) + (' else: '+str(self.else_suite) if self.else_suite is not None else ' ')
+        return 'while ' + str(self.condition) + ' : ' + str(self.suite) + (
+            ' else: ' + str(self.else_suite) if self.else_suite is not None else ' ')
+
+
+class IfStmt:
+    def __init__(self, condition_suite_blocks, else_suite=None):
+        self.blocks = condition_suite_blocks
+        self.else_suite = else_suite
+
+    def __str__(self):
+        ret_value = ''
+
+        for x in range(0, len(self.blocks)):
+            if x == 0:
+                ret_value += ('if ' + str(self.blocks[0][0]) + ':' + str(self.blocks[0][1]))
+            else:
+                ret_value += ('elif ' + str(self.blocks[x][0]) + ':' + str(self.blocks[x][1]))
+            if self.else_suite is not None:
+                ret_value += ('else ' + str(self.else_suite))
+        return ret_value
+
+
+class ElifClause:
+    pass
