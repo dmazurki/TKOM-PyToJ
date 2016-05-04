@@ -8,13 +8,13 @@ class IndentTest(unittest.TestCase):
         x
           x
            x
-          x
+        x
              x
         x\
         '''
-        ptj_lex.lexer.input(code_to_test)
-        tokens = [tok.type for tok in ptj_lex.lexer if tok.type == 'INDENT' or tok.type == 'DEDENT']
-        expected_tokens = ['INDENT', 'INDENT', 'DEDENT', 'INDENT', 'DEDENT']
+        ptj_lex.ptj_lexer.input(code_to_test)
+        tokens = [tok.type for tok in ptj_lex.ptj_lexer if tok.type == 'INDENT' or tok.type == 'DEDENT']
+        expected_tokens = ['INDENT', 'INDENT', 'DEDENT', 'DEDENT', 'INDENT', 'DEDENT']
         self.assertListEqual(tokens, expected_tokens, 'Wrong indenting sequence!')
 
     def tearDown(self):
@@ -28,24 +28,24 @@ class LiteralTest(unittest.TestCase):
     def testStringLiteral(self):
         code_to_test = '''
         "x\a"'''
-        ptj_lex.lexer.input(code_to_test)
-        tokens = [tok.value for tok in ptj_lex.lexer if tok.type == 'STRING_LITERAL']
+        ptj_lex.ptj_lexer.input(code_to_test)
+        tokens = [tok.value for tok in ptj_lex.ptj_lexer if tok.type == 'STRING_LITERAL']
         expected_tokens = ['"x\a"']
         self.assertListEqual(tokens, expected_tokens,
                              'Wrong token list! ' + str(tokens) + ' expected: ' + str(expected_tokens))
 
     def testIntegerLiteral(self):
         code_to_test = '0 01 19940'
-        ptj_lex.lexer.input(code_to_test)
-        tokens = [tok.value for tok in ptj_lex.lexer if tok.type == 'INTEGER_LITERAL']
+        ptj_lex.ptj_lexer.input(code_to_test)
+        tokens = [tok.value for tok in ptj_lex.ptj_lexer if tok.type == 'INTEGER_LITERAL']
         expected_tokens = ['0', '01', '19940']
         self.assertListEqual(tokens, expected_tokens,
                              'Wrong token list! ' + str(tokens) + ' expected: ' + str(expected_tokens))
 
     def testFloatingPointLiteral(self):
         code_to_test = '.12 12.12 12. 10e10 10e-10 1.e01 00.00e00'
-        ptj_lex.lexer.input(code_to_test)
-        tokens = [tok.value for tok in ptj_lex.lexer if tok.type == 'FLOATING_POINT_LITERAL']
+        ptj_lex.ptj_lexer.input(code_to_test)
+        tokens = [tok.value for tok in ptj_lex.ptj_lexer if tok.type == 'FLOATING_POINT_LITERAL']
         expected_tokens = code_to_test.split()
         self.assertListEqual(tokens, expected_tokens,
                              'Wrong token list! ' + str(tokens) + ' expected: ' + str(expected_tokens))

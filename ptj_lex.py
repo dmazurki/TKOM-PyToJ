@@ -75,18 +75,21 @@ def t_IDENTIFIER(t):
 indent_stack = [0]
 
 
-
 def t_NEWLINE(t):
-    r'\n[ ]*'
-    indentLength = len(t.value) - 1
-    lastIndent = indent_stack[-1]
-
-    if indentLength > lastIndent:
-        indent_stack.append(indentLength)
+    r'\n+[ ]*'
+    indentation_start = t.value.find(' ')
+    indentation_length = indentation_start is not -1 and len(t.value[indentation_start:]) or 0
+    last_indent = indent_stack[-1]
+    if indentation_length > last_indent:
+        indent_stack.append(indentation_length)
         t.type = "INDENT"
-    elif indentLength < lastIndent:
-        while indent_stack[-1] > indentLength: indent_stack.pop()
+    elif indentation_length < last_indent:
+        dedent_quantity = 0
+        while indent_stack[-1] > indentation_length:
+            dedent_quantity += 1
+            indent_stack.pop()
         t.type = "DEDENT"
+        t.quantity = dedent_quantity
     else:
         t.type = "NEWLINE"
 
@@ -167,15 +170,21 @@ t_ignore = ' \t'
 def resetLexer():
     del indent_stack[1:]
 
-class PtjLexer():
+
+class PtjLexer:
     def __init__(self):
         self.lexer = lex.lex()
-        self.indenting = None
+        self.indentation = None
 
     def token(self):
-        if self.indenting is not None:
-            ret = self.indenting
-            self.indenting = None
+        if self.indentation is not None:
+            ret = self.indentation
+            if self.indentation.type == 'DEDENT':
+                self.indentation.quantity -= 1
+                if self.indentation.quantity == 0:
+                    self.indentation = None
+            else:
+                self.indentation = None
             return ret
 
         tok = self.lexer.token()
@@ -188,7 +197,8 @@ class PtjLexer():
             newtok.type = tok.type
             newtok.lineno = tok.lineno
             newtok.lexpos = tok.lexpos
-            self.indenting = newtok
+            self.indentation = newtok
+            if self.indentation.type == 'DEDENT': self.indentation.quantity = tok.quantity
 
             tok.type = 'NEWLINE'
             tok.value = '\n'
@@ -207,8 +217,8 @@ class PtjLexer():
             raise StopIteration
         return t
 
-ptj_lexer = PtjLexer()
 
+ptj_lexer = PtjLexer()
 
 if __name__ == '__main__':
     code = open('test_code')

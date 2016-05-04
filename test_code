@@ -1,15 +1,11 @@
+import dupa
 
-while n>0:
- n=n-1
- a*=b
-else: print a
-if a>0:
- break
-elif 2>1:
- return 0
-elif f():
- print a
-else:
- print 'ugabuga'
+class A(dd):
+ def myfun(self,v,b):
+  if a>0:
+   f(33)
+  return 3
+
+class V(x): pass
 
 

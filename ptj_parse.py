@@ -8,9 +8,11 @@ tokens = ptj_lex.tokens
 
 def p_program(p):
     """program : NEWLINE
-               | compound_stmt
-               | program compound_stmt
-               | program NEWLINE"""
+               | classdef
+               | import_stmt
+               | program NEWLINE
+               | program classdef
+               | program import_stmt"""
     if len(p) == 2 and p[1] != '\n':
         p[0] = ptj_parse_model.Program(p[1])
     elif len(p) == 2:
@@ -54,7 +56,7 @@ def p_call(p):
     """call : primary OPEN_PARENTHESIS CLOSE_PARENTHESIS
             | primary OPEN_PARENTHESIS positional_arguments CLOSE_PARENTHESIS"""
     if len(p) == 4:
-        p[0] = ptj_parse_model.Call(p[1], ptj_parse_model.PositionalArguments())
+        p[0] = ptj_parse_model.Call(p[1], [])
     else:
         p[0] = ptj_parse_model.Call(p[1], p[3])
 
@@ -63,14 +65,10 @@ def p_positional_arguments(p):
     """positional_arguments : expression
                             | positional_arguments COMA expression"""
     if len(p) == 2:
-        p[0] = ptj_parse_model.PositionalArguments(p[1])
+        p[0] = [p[1]]
     else:
-        p[1].addArgument(p[3])
-        p[0] = p[1]
+        p[0] = p[1] + [p[3]]
 
-
-# call ::=  primary "(" [positional_arguments] ")"
-# positional_arguments ::=  expression ("," expression)*
 
 #TODO plus/minus conflict
 def p_u_expr(p):
@@ -211,6 +209,10 @@ def p_break_stmt(p):
     """break_stmt : BREAK"""
     p[0] = ptj_parse_model.BreakStmt()
 
+#TODO
+def p_import_stmt(p):
+    """import_stmt : IMPORT identifier"""
+    p[0] = p[1]
 
 def p_compound_stmt(p):
     """compound_stmt : expression
@@ -279,6 +281,44 @@ def p_elifs(p):
         p[0] = [(p[2], p[4])]
     else:
         p[0] = p[1] + [(p[3], p[5])]
+
+def p_funcdef(p):
+    """funcdef : DEF identifier OPEN_PARENTHESIS CLOSE_PARENTHESIS COLON suite
+               | DEF identifier OPEN_PARENTHESIS parameter_list CLOSE_PARENTHESIS COLON suite"""
+    if len(p) == 7:
+        p[0] = ptj_parse_model.FuncDef(p[2], [], p[6])
+    else:
+        p[0] = ptj_parse_model.FuncDef(p[2], p[4], p[7])
+
+def p_parameter_list(p):
+    """parameter_list : identifier
+                      | parameter_list COMA identifier"""
+    if len(p) == 2:
+        p[0] = [p[1]]
+    else:
+        p[0] = p[1] + [p[3]]
+
+def p_classdef(p):
+    """classdef : CLASS identifier COLON pass_stmt
+                | CLASS identifier COLON NEWLINE INDENT class_suite DEDENT
+                | CLASS identifier OPEN_PARENTHESIS identifier CLOSE_PARENTHESIS COLON pass_stmt
+                | CLASS identifier OPEN_PARENTHESIS identifier CLOSE_PARENTHESIS COLON NEWLINE INDENT class_suite DEDENT"""
+    if len(p) == 5:
+        p[0] = ptj_parse_model.ClassDef(p[2], None, p[4])
+    if len(p) == 8 and p[7].__class__ is not ptj_parse_model.PassStmt:
+        p[0] = ptj_parse_model.ClassDef(p[2], None, p[6])
+    elif len(p) == 8:
+        p[0] = ptj_parse_model.ClassDef(p[2], p[4], p[7])
+    elif len(p) == 11:
+        p[0] = ptj_parse_model.ClassDef(p[2], p[4], p[9])
+
+def p_class_suite(p):
+    """class_suite : funcdef
+                   | class_suite funcdef"""
+    if len(p) == 2:
+        p[0] = [p[1]]
+    else:
+        p[0] = p[1] + [p[2]]
 
 def p_error(p):
     if p:

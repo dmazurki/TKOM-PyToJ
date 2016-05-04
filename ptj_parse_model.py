@@ -20,6 +20,8 @@ class Literal:
     def __str__(self):
         return str(self.value)
 
+    __repr__ = __str__
+
 
 class Identifier:
     def __init__(self, value):
@@ -27,6 +29,8 @@ class Identifier:
 
     def __str__(self):
         return str(self.value)
+
+    __repr__ = __str__
 
 
 class AttributeRef:
@@ -121,7 +125,7 @@ class PrintStmt:
         self.arguments = arguments
 
     def __str__(self):
-        return 'print ' + ', '.join([str(x) for x in self.arguments.argument_list])
+        return 'print ' + str(self.arguments)
 
 
 class ReturnStmt:
@@ -203,5 +207,34 @@ class IfStmt:
         return ret_value
 
 
-class ElifClause:
-    pass
+class FuncDef:
+    def __init__(self, name, parameters, suite):
+        self.name = name
+        self.parameters = parameters
+        self.suite = suite
+
+    def __str__(self):
+        ret_value = 'def '
+        ret_value += str(self.name) + '('
+        ret_value += ', '.join([str(x) for x in self.parameters])
+        ret_value += '):' + str(self.suite)
+        return ret_value
+
+
+class ClassDef:
+    def __init__(self, name, parent, methods):
+        self.name = name
+        self.parent = parent
+        self.methods = methods
+
+    def __str__(self):
+        ret_value = 'class '
+        ret_value += str(self.name)
+        if self.parent is not None:
+            ret_value += '(' + str(self.parent) + ')'
+        ret_value += ':'
+        if self.methods.__class__ == PassStmt:
+            ret_value += str(self.methods)
+        else:
+            ret_value += '\n' + '\n'.join([str(x) for x in self.methods])
+        return ret_value
