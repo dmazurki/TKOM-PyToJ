@@ -129,7 +129,7 @@ class PrintStmt:
 
 
 class ReturnStmt:
-    def __init__(self, expression):
+    def __init__(self, expression = None):
         self.expression = expression
 
     def __str__(self):
@@ -148,6 +148,15 @@ class ContinueStmt:
 
     def __str__(self):
         return 'continue'
+
+class ImportStmt:
+    def __init__(self, module_to_import, from_part):
+        self.from_part = from_part
+        self.module = module_to_import
+
+    def __str__(self):
+        return 'import ' + str(self.module)
+
 
 
 class StmtList:

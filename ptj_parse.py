@@ -198,8 +198,12 @@ def p_print_stmt(p):
     p[0] = ptj_parse_model.PrintStmt(p[2])
 
 def p_return_stmt(p):
-    """return_stmt : RETURN expression"""
-    p[0] = ptj_parse_model.ReturnStmt(p[2])
+    """return_stmt : RETURN expression
+                   | RETURN"""
+    if len(p) == 2:
+        p[0] = ptj_parse_model.ReturnStmt(ptj_parse_model.Identifier('None'))
+    else:
+        p[0] = ptj_parse_model.ReturnStmt(p[2])
 
 def p_continue_stmt(p):
     """continue_stmt : CONTINUE"""
@@ -211,8 +215,18 @@ def p_break_stmt(p):
 
 #TODO
 def p_import_stmt(p):
-    """import_stmt : IMPORT identifier"""
-    p[0] = p[1]
+    """import_stmt : IMPORT module"""
+    p[0] = ptj_parse_model.ImportStmt(p[2], None)
+
+def p_module(p):
+    """module : identifier
+              | module DOT identifier"""
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = p[1] + '.' + p[3]
+
+
 
 def p_compound_stmt(p):
     """compound_stmt : expression
@@ -331,6 +345,10 @@ def p_error(p):
 #TODO importing modules grammar parsing
 
 parser = yacc.yacc()
+
+def generateProgram(source):
+    code = open('test_code')
+    return parser.parse(code.read(), lexer=ptj_lex.ptj_lexer)
 
 if __name__ == '__main__':
     code = open('test_code')
