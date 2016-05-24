@@ -71,18 +71,18 @@ class ConditionalExpression:
         return str(self.success) + ' if ' + str(self.requirement) + ' else ' + str(self.failure)
 
 
-class PositionalArguments:
-    def __init__(self, first_argument=None):
-        if first_argument is None:
-            self.argument_list = []
-        else:
-            self.argument_list = [first_argument]
-
-    def addArgument(self, new_arg):
-        self.argument_list.append(new_arg)
-
-    def __str__(self):
-        return ', '.join([str(x) for x in self.argument_list])
+# class PositionalArguments:
+#     def __init__(self, first_argument=None):
+#         if first_argument is None:
+#             self.argument_list = []
+#         else:
+#             self.argument_list = [first_argument]
+#
+#     def addArgument(self, new_arg):
+#         self.argument_list.append(new_arg)
+#
+#     def __str__(self):
+#         return ', '.join([str(x) for x in self.argument_list])
 
 
 class Call:
@@ -150,8 +150,7 @@ class ContinueStmt:
         return 'continue'
 
 class ImportStmt:
-    def __init__(self, module_to_import, from_part):
-        self.from_part = from_part
+    def __init__(self, module_to_import):
         self.module = module_to_import
 
     def __str__(self):

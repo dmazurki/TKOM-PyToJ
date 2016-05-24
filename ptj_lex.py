@@ -1,180 +1,152 @@
+# author: Damian Mazurkiewicz
+# date: 07.05.2016
+
 import ply.lex as lex
 
-keywords = {
-    'and': 'AND',
-    'break': 'BREAK',
-    'class': 'CLASS',
-    'continue': 'CONTINUE',
-    'def': 'DEF',
-    'elif': 'ELIF',
-    'else': 'ELSE',
-    'for': 'FOR',
-    'from': 'FROM',
-    'import': 'IMPORT',
-    'if': 'IF',
-    'is': 'IS',
-    'not': 'NOT',
-    'or': 'OR',
-    'pass': 'PASS',
-    'print': 'PRINT',
-    'return': 'RETURN',
-    'while': 'WHILE'
-}
-tokens = keywords.values() + [
-    'IDENTIFIER',
-    'NEWLINE',
-    'INDENT',
-    'DEDENT',
-    'STRING_LITERAL',
-    'INTEGER_LITERAL',
-    'FLOATING_POINT_LITERAL',
-
-    # Operators
-    'PLUS',
-    'LT',
-    'MINUS',
-    'GT',
-    'LTE',
-    'GTE',
-    'ASTERISK',
-    'SLASH',
-    'EQ',
-    'NE',
-    'PERCENT',
-
-    # Delimiters
-    'OPEN_PARENTHESIS',
-    'CLOSE_PARENTHESIS',
-    'OPEN_CURLY_BRACKET',
-    'CLOSE_CURLY_BRACKET',
-    'OPEN_BRACKET',
-    'CLOSE_BRACKET',
-    'COMA',
-    'DOT',
-    'COLON',
-    'SEMICOLON',
-    'HASH',
-    'APOSTROPHE',
-    'QUOTATION_MARKS',
-    'BACKSLASH',
-    'ASSIGNMENT',
-    'PLUS_ASSIGNMENT',
-    'MINUS_ASSIGNMENT',
-    'ASTERISK_ASSIGNMENT',
-    'SLASH_ASSIGNMENT',
-    'PERCENT_ASSIGNMENT'
-]
-
-
-def t_IDENTIFIER(t):
-    r'[a-zA-Z_][a-zA-Z_0-9]*'
-    t.type = keywords.get(t.value, 'IDENTIFIER')
-    return t
-
-
-indent_stack = [0]
-
-
-def t_NEWLINE(t):
-    r'\n+[ ]*'
-    indentation_start = t.value.find(' ')
-    indentation_length = indentation_start is not -1 and len(t.value[indentation_start:]) or 0
-    last_indent = indent_stack[-1]
-    if indentation_length > last_indent:
-        indent_stack.append(indentation_length)
-        t.type = "INDENT"
-    elif indentation_length < last_indent:
-        dedent_quantity = 0
-        while indent_stack[-1] > indentation_length:
-            dedent_quantity += 1
-            indent_stack.pop()
-        t.type = "DEDENT"
-        t.quantity = dedent_quantity
-    else:
-        t.type = "NEWLINE"
-
-    return t
-
-
-escapeseq = r'\\.'
-shortstringchar_ap = r'([^\\\n\'])'
-shortstringitem_ap = r'(' + shortstringchar_ap + '|' + escapeseq + ')'
-shortstring_ap = r'\'(' + shortstringitem_ap + ')*\''
-shortstringchar_qu = r'([^\\\n"])'
-shortstringitem_qu = r'(' + shortstringchar_qu + '|' + escapeseq + ')'
-shortstring_qu = r'"(' + shortstringitem_qu + ')*"'
-stringliteral = r'(' + shortstring_ap + '|' + shortstring_qu + ')'
-
-
-@lex.TOKEN(stringliteral)
-def t_STRING_LITERAL(t):
-    return t
-
-
-t_INTEGER_LITERAL = r'([0-9]+)'
-
-exponent = r'((e|E)[+-]?[0-9]+)'
-pointfloat = r'((([0-9]*\.[0-9]+)|([0-9]+\.))' + exponent + '?)'
-exponentfloat = r'(([0-9]+)' + exponent + ')'
-floatnumber = r'' + pointfloat + '|' + exponentfloat
-
-
-@lex.TOKEN(floatnumber)
-def t_FLOATING_POINT_LITERAL(t):
-    return t
-
-
-t_PLUS = r'\+'
-t_LT = r'<'
-t_MINUS = r'-'
-t_GT = r'>'
-t_LTE = r'<='
-t_GTE = r'>='
-t_ASTERISK = r'\*'
-t_SLASH = r'/'
-t_EQ = r'=='
-t_NE = r'<>|!='
-t_PERCENT = r'%'
-
-t_OPEN_PARENTHESIS = r'\('
-t_CLOSE_PARENTHESIS = r'\)'
-t_OPEN_CURLY_BRACKET = r'\{'
-t_CLOSE_CURLY_BRACKET = r'\}'
-t_OPEN_BRACKET = r'\['
-t_CLOSE_BRACKET = r'\]'
-t_COMA = r'\,'
-t_DOT = r'\.'
-t_COLON = r':'
-t_SEMICOLON = r';'
-t_HASH = r'\#'
-t_APOSTROPHE = r'\''
-t_QUOTATION_MARKS = r'\"'
-t_BACKSLASH = r'\\'
-t_ASSIGNMENT = r'='
-t_PLUS_ASSIGNMENT = r'\+='
-t_MINUS_ASSIGNMENT = r'-='
-t_ASTERISK_ASSIGNMENT = r'\*='
-t_SLASH_ASSIGNMENT = r'/='
-t_PERCENT_ASSIGNMENT = r'%'
-
-
-def t_error(t):
-    print("Illegal character %s" % t.value[0])
-    t.lexer.skip(1)
-
-
-# A string containing ignored characters (spaces and tabs)
-t_ignore = ' \t'
-
-
-def resetLexer():
-    del indent_stack[1:]
-
-
+# Wrapper for lex.Lexer() object. It contains token
+# definitions and logic for Python indentation handling.
 class PtjLexer:
+    keywords = {
+        'and': 'AND',
+        'break': 'BREAK',
+        'class': 'CLASS',
+        'continue': 'CONTINUE',
+        'def': 'DEF',
+        'elif': 'ELIF',
+        'else': 'ELSE',
+        'from': 'FROM',
+        'import': 'IMPORT',
+        'if': 'IF',
+        'is': 'IS',
+        'not': 'NOT',
+        'or': 'OR',
+        'pass': 'PASS',
+        'print': 'PRINT',
+        'return': 'RETURN',
+        'while': 'WHILE'
+    }
+    tokens = keywords.values() + [
+        'IDENTIFIER',
+        'NEWLINE',
+        'INDENT',
+        'DEDENT',
+        'STRING_LITERAL',
+        'INTEGER_LITERAL',
+        'FLOATING_POINT_LITERAL',
+
+        # Operators
+        'PLUS',
+        'LT',
+        'MINUS',
+        'GT',
+        'LTE',
+        'GTE',
+        'ASTERISK',
+        'SLASH',
+        'EQ',
+        'NE',
+        'PERCENT',
+
+        # Delimiters
+        'OPEN_PARENTHESIS',
+        'CLOSE_PARENTHESIS',
+        'COMA',
+        'DOT',
+        'COLON',
+        'SEMICOLON',
+        'ASSIGNMENT',
+        'PLUS_ASSIGNMENT',
+        'MINUS_ASSIGNMENT',
+        'ASTERISK_ASSIGNMENT',
+        'SLASH_ASSIGNMENT',
+        'PERCENT_ASSIGNMENT'
+    ]
+
+    def t_IDENTIFIER(self, t):
+        r'[a-zA-Z_][a-zA-Z_0-9]*'
+        t.type = self.keywords.get(t.value, 'IDENTIFIER')
+        return t
+
+    def t_NEWLINE(self, t):
+        r'\n+[ ]*'
+        indentation_start = t.value.find(' ')
+        indentation_length = indentation_start is not -1 and len(t.value[indentation_start:]) or 0
+        # update line number
+        t.lexer.lineno += len(t.value) - indentation_length
+
+        last_indent = self.indent_stack[-1]
+        if indentation_length > last_indent:
+            self.indent_stack.append(indentation_length)
+            t.type = "INDENT"
+        elif indentation_length < last_indent:
+            dedent_quantity = 0
+            while self.indent_stack[-1] > indentation_length:
+                dedent_quantity += 1
+                self.indent_stack.pop()
+            t.type = "DEDENT"
+            t.quantity = dedent_quantity
+        else:
+            t.type = "NEWLINE"
+
+        return t
+
+    # Regular expressions for string literals.
+    escapeseq = r'\\.'
+    stringchar = r'([^\\"\n])'
+    stringitem = r'(' + stringchar + '|' + escapeseq + ')'
+    stringliteral = r'"(' + stringitem + ')*"'
+
+    @lex.TOKEN(stringliteral)
+    def t_STRING_LITERAL(self, t):
+        return t
+
+    t_INTEGER_LITERAL = r'([0-9]+)'
+
+    exponent = r'((e|E)[+-]?[0-9]+)'
+    pointfloat = r'((([0-9]*\.[0-9]+)|([0-9]+\.))' + exponent + '?)'
+    exponentfloat = r'(([0-9]+)' + exponent + ')'
+    floatnumber = r'' + pointfloat + '|' + exponentfloat
+
+    @lex.TOKEN(floatnumber)
+    def t_FLOATING_POINT_LITERAL(self, t):
+        return t
+
+    t_PLUS = r'\+'
+    t_LT = r'<'
+    t_MINUS = r'-'
+    t_GT = r'>'
+    t_LTE = r'<='
+    t_GTE = r'>='
+    t_ASTERISK = r'\*'
+    t_SLASH = r'/'
+    t_EQ = r'=='
+    t_NE = r'<>|!='
+    t_PERCENT = r'%'
+
+    t_OPEN_PARENTHESIS = r'\('
+    t_CLOSE_PARENTHESIS = r'\)'
+    t_COMA = r'\,'
+    t_DOT = r'\.'
+    t_COLON = r':'
+    t_SEMICOLON = r';'
+    t_ASSIGNMENT = r'='
+    t_PLUS_ASSIGNMENT = r'\+='
+    t_MINUS_ASSIGNMENT = r'-='
+    t_ASTERISK_ASSIGNMENT = r'\*='
+    t_SLASH_ASSIGNMENT = r'/='
+    t_PERCENT_ASSIGNMENT = r'%'
+
+    def t_error(self, t):
+        print("Illegal character %s" % t.value[0])
+        t.lexer.skip(1)
+
+    # A string containing ignored characters (spaces and tabs)
+    t_ignore = ' \t'
+
     def __init__(self):
-        self.lexer = lex.lex()
+        self.lexer = lex.lex(module=self)
         self.indentation = None
+        self.indent_stack = [0]
 
     def token(self):
         if self.indentation is not None:
@@ -206,6 +178,7 @@ class PtjLexer:
         return tok
 
     def input(self, code):
+        self.indent_stack = [0]
         self.lexer.input(code)
 
     def __iter__(self):
@@ -217,11 +190,5 @@ class PtjLexer:
             raise StopIteration
         return t
 
-
 ptj_lexer = PtjLexer()
 
-if __name__ == '__main__':
-    code = open('test_code')
-    ptj_lexer.input(code.read())
-    for tok in ptj_lexer:
-        print str(tok)

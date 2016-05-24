@@ -13,7 +13,7 @@ class Generator:
         self.names_in_scope = []
         self.current_class_fields = []
         self.class_reference_name = None
-        self.get_type_from_name = False
+        self.get_type_from_name = True
 
     def generateJavaCode(self, program=None):
         self.indent = 0
@@ -52,7 +52,7 @@ class Generator:
         return result.getvalue()
 
     def processImportStmt(self, import_stmt):
-        return 'Import'
+        return 'import ' + import_stmt.module + ';'
 
     def processMethodDef(self, method_def):
         self.names_in_scope.append([str(x) for x in method_def.parameters])
@@ -76,11 +76,11 @@ class Generator:
         elif statement.__class__ == ptj_parse_model.PassStmt:
             result.write('{}')
         elif statement.__class__ == ptj_parse_model.PrintStmt:
-            pass
+            result.write(self.processPrintStmt(statement))
         elif statement.__class__ == ptj_parse_model.ReturnStmt:
             result.write(self.processReturnStmt(statement))
         elif statement.__class__ == ptj_parse_model.BreakStmt:
-            pass
+            result.write('break')
         elif statement.__class__ == ptj_parse_model.ContinueStmt:
             pass
         elif statement.__class__ == ptj_parse_model.StmtList:
@@ -88,18 +88,28 @@ class Generator:
                 result.write(self.processStatement(statement) + ';')
             self.newlineAndIndent(result)
         elif statement.__class__ == ptj_parse_model.WhileStmt:
-            pass
+            result.write(self.processWhileStmt(statement))
         elif statement.__class__ == ptj_parse_model.IfStmt:
             result.write(self.processIfStmt(statement))
         else:
             result.write('unknown_statement')
         return result.getvalue()
 
+    def processPrintStmt(self, print_stmt):
+        result = StringIO.StringIO()
+        result.write('System.out.println(')
+        if len(print_stmt.arguments) is not 0:
+            result.write('(String)' + self.processExpression(print_stmt.arguments[0]))
+            for arg in print_stmt.arguments[1:]:
+                result.write('+(String)' + self.processExpression(arg))
+        result.write(')')
+        return result.getvalue()
+
     def processAssignment(self, assignment):
         result = StringIO.StringIO()
         target = assignment.target
         if target.__class__ == ptj_parse_model.Identifier:
-            if str(target) not in self.names_in_scope:
+            if str(target) not in self.names_in_scope[-1]:
                 result.write('Object ' + str(target) + '; ')
                 self.names_in_scope.append(str(target))
         elif target.__class__ == ptj_parse_model.AttributeRef:
@@ -132,7 +142,7 @@ class Generator:
         elif expression.__class__ == ptj_parse_model.Call:
             result.write(self.processCall(expression))
         else:
-            result.write('unknown_expression')
+            result.write('unknown_expression:' + str(expression.__class__))
         return result.getvalue()
 
     def processIdentifier(self, identifier):
@@ -148,10 +158,37 @@ class Generator:
 
     def processCall(self, call):
         result = StringIO.StringIO()
-        if self.get_type_from_name == False:
-            result.write(self.processExpression(call.caller) + '()')
+        caller = self.processExpression(call.caller)
+        dot_pos = caller.rfind('.')
+        if dot_pos is not -1:
+            caller_obj = caller[:dot_pos]
+            caller_func = caller[dot_pos + 1:]
+
+            if self.get_type_from_name and caller_obj.rfind('_') is not -1:
+                casting_pos = caller_obj.rfind('_')
+                cast = caller_obj[casting_pos + 1:]
+                result.write('((' + cast + ')' + caller_obj + ').' + caller_func)
+                result.write(self.processParamList(call.arguments))
+            else:
+                result.write(caller_obj + '.' + 'getClass().getMethod("' + caller_func + '"')
+                for x in range(0, len(call.arguments)):
+                    result.write(', Object')
+                result.write(').invoke')
+                invoke_arguments = [ptj_parse_model.Identifier(caller_obj)] + call.arguments
+                result.write(self.processParamList(invoke_arguments))
         else:
-            result.write('unknown_call')
+            result.write(caller + self.processParamList(call.arguments))
+
+        return result.getvalue()
+
+    def processParamList(self, param_list):
+        result = StringIO.StringIO()
+        result.write('(')
+        if len(param_list) is not 0:
+            result.write(self.processExpression(param_list[0]))
+            for arg in param_list[1:]:
+                result.write(', ' + self.processExpression(arg))
+        result.write(')')
         return result.getvalue()
 
     def processAttributeRef(self, attribute_ref):
@@ -166,6 +203,15 @@ class Generator:
         result.write(self.processExpression(binary_expression.op1))
         result.write(' ' + str(binary_expression.operator) + ' ')
         result.write(self.processExpression(binary_expression.op2))
+        return result.getvalue()
+
+    def processWhileStmt(self, while_stmt):
+        result = StringIO.StringIO()
+        print str(self.names_in_scope)
+        result.write('while(true)')
+        internal = ptj_parse_model.IfStmt([[while_stmt.condition, while_stmt.suite]], while_stmt.else_suite)
+        suite = ptj_parse_model.IndentedStmtList(internal)
+        result.write(self.processSuite(suite))
         return result.getvalue()
 
     def processIfStmt(self, if_stmt):

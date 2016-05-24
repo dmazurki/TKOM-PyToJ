@@ -4,7 +4,7 @@ import ptj_parse_model
 
 start = 'program'
 
-tokens = ptj_lex.tokens
+tokens = ptj_lex.PtjLexer.tokens
 
 def p_program(p):
     """program : NEWLINE
@@ -213,10 +213,9 @@ def p_break_stmt(p):
     """break_stmt : BREAK"""
     p[0] = ptj_parse_model.BreakStmt()
 
-#TODO
 def p_import_stmt(p):
     """import_stmt : IMPORT module"""
-    p[0] = ptj_parse_model.ImportStmt(p[2], None)
+    p[0] = ptj_parse_model.ImportStmt(p[2])
 
 def p_module(p):
     """module : identifier
@@ -224,7 +223,7 @@ def p_module(p):
     if len(p) == 2:
         p[0] = p[1]
     else:
-        p[0] = p[1] + '.' + p[3]
+        p[0] = str(p[1]) + '.' + str(p[3])
 
 
 
