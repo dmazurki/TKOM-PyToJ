@@ -5,7 +5,7 @@ import StringIO
 
 
 class Generator:
-    def __init__(self, output):
+    def __init__(self, output, get_type_from_name):
         self.output = output
         self.indent = 0
         self.java_code = ''
@@ -13,7 +13,7 @@ class Generator:
         self.names_in_scope = []
         self.current_class_fields = []
         self.class_reference_name = None
-        self.get_type_from_name = True
+        self.get_type_from_name = get_type_from_name
 
     def generateJavaCode(self, program=None):
         self.indent = 0
@@ -82,7 +82,7 @@ class Generator:
         elif statement.__class__ == ptj_parse_model.BreakStmt:
             result.write('break')
         elif statement.__class__ == ptj_parse_model.ContinueStmt:
-            pass
+            result.write('continue')
         elif statement.__class__ == ptj_parse_model.StmtList:
             for statement in statement.statement_list:
                 result.write(self.processStatement(statement) + ';')
@@ -99,9 +99,9 @@ class Generator:
         result = StringIO.StringIO()
         result.write('System.out.println(')
         if len(print_stmt.arguments) is not 0:
-            result.write('(String)' + self.processExpression(print_stmt.arguments[0]))
+            result.write(self.processExpression(print_stmt.arguments[0], 'String'))
             for arg in print_stmt.arguments[1:]:
-                result.write('+(String)' + self.processExpression(arg))
+                result.write('+'+ self.processExpression(arg, 'String'))
         result.write(')')
         return result.getvalue()
 
@@ -129,24 +129,35 @@ class Generator:
         result.write(self.processExpression(return_stmt.expression))
         return result.getvalue()
 
-    def processExpression(self, expression):
+    def processExpression(self, expression, casting=None):
         result = StringIO.StringIO()
         if expression.__class__ == ptj_parse_model.BinaryExpression:
             result.write(self.processBinaryExpression(expression))
         elif expression.__class__ == ptj_parse_model.Literal:
             result.write(str(expression.value))
         elif expression.__class__ == ptj_parse_model.Identifier:
-            result.write(self.processIdentifier(expression))
+            result.write(self.processIdentifier(expression, casting))
         elif expression.__class__ == ptj_parse_model.AttributeRef:
-            result.write(self.processAttributeRef(expression))
+            pre_result = self.processAttributeRef(expression)
+            if casting is not None:
+                pre_result = self.castAttributeRef(pre_result, casting)
+            result.write(pre_result)
         elif expression.__class__ == ptj_parse_model.Call:
-            result.write(self.processCall(expression))
+            result.write(self.processCall(expression, casting))
         else:
             result.write('unknown_expression:' + str(expression.__class__))
+
         return result.getvalue()
 
-    def processIdentifier(self, identifier):
+    def processIdentifier(self, identifier, casting):
         text = identifier.value
+        if casting is not None:
+            if self.get_type_from_name is True and text.find('_') is not -1:
+                casting_type = text[text.rfind('_') + 1:]
+                return '(' + casting_type + ')' + text
+            else:
+                return '(' + str(casting) + ')' + text
+
         if text == 'True':
             return 'true'
         elif text == 'False':
@@ -156,10 +167,18 @@ class Generator:
         else:
             return text
 
-    def processCall(self, call):
+    def processCall(self, call, casting):
         result = StringIO.StringIO()
         caller = self.processExpression(call.caller)
         dot_pos = caller.rfind('.')
+        underscore_pos = caller.rfind('_')
+        if casting is not None:
+            if self.get_type_from_name is True and underscore_pos > dot_pos:
+                cast_type = caller[underscore_pos + 1:]
+                result.write('(' + cast_type + ')')
+            elif casting is not '':
+                result.write('(' + str(casting) + ')')
+
         if dot_pos is not -1:
             caller_obj = caller[:dot_pos]
             caller_func = caller[dot_pos + 1:]
@@ -198,11 +217,27 @@ class Generator:
         result.write(self.processExpression(attribute_ref.right_val))
         return result.getvalue()
 
+    def castAttributeRef(self, java_code, casting):
+        dot_pos = java_code.rfind('.')
+        underscore_pos = java_code.rfind('_')
+        if self.get_type_from_name is True and underscore_pos > dot_pos:
+            cast_type = java_code[underscore_pos + 1:]
+            return '(' + cast_type + ')' + java_code
+        elif casting is not '':
+            return '(' + str(casting) + ')' + java_code
+        else:
+            return java_code
+
     def processBinaryExpression(self, binary_expression):
         result = StringIO.StringIO()
-        result.write(self.processExpression(binary_expression.op1))
+        operator_str = str(binary_expression.operator)
+        casting = None
+        if operator_str in ['+', '-', '*', '/', '%']:
+            casting = 'double'
+
+        result.write(self.processExpression(binary_expression.op1, casting))
         result.write(' ' + str(binary_expression.operator) + ' ')
-        result.write(self.processExpression(binary_expression.op2))
+        result.write(self.processExpression(binary_expression.op2, casting))
         return result.getvalue()
 
     def processWhileStmt(self, while_stmt):
