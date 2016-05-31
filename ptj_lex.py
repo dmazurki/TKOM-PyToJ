@@ -14,7 +14,6 @@ class PtjLexer:
         'def': 'DEF',
         'elif': 'ELIF',
         'else': 'ELSE',
-        'from': 'FROM',
         'import': 'IMPORT',
         'if': 'IF',
         'is': 'IS',
@@ -134,7 +133,7 @@ class PtjLexer:
     t_MINUS_ASSIGNMENT = r'-='
     t_ASTERISK_ASSIGNMENT = r'\*='
     t_SLASH_ASSIGNMENT = r'/='
-    t_PERCENT_ASSIGNMENT = r'%'
+    t_PERCENT_ASSIGNMENT = r'%='
 
     def t_error(self, t):
         print("Illegal character %s" % t.value[0])

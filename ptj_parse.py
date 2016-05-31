@@ -70,10 +70,11 @@ def p_positional_arguments(p):
         p[0] = p[1] + [p[3]]
 
 
-#TODO plus/minus conflict
 def p_u_expr(p):
-    """u_expr : primary"""
-    if (len(p) == 2):
+    """u_expr : primary
+              | MINUS primary
+              | PLUS primary"""
+    if len(p) == 2:
         p[0] = p[1]
     else:
         p[0] = ptj_parse_model.UnaryExpression(value=p[2], operator=p[1])
@@ -252,7 +253,7 @@ def p_indented_stmt_list(p):
     if len(p) == 2:
         p[0] = ptj_parse_model.IndentedStmtList(p[1])
     else:
-        p[1].addStmt(p[2])
+        p[1].add_stmt(p[2])
         p[0] = p[1]
 
 def p_stmt_list(p):
@@ -261,7 +262,7 @@ def p_stmt_list(p):
     if len(p) == 2 or len(p) == 3:
         p[0] = ptj_parse_model.StmtList(p[1])
     else:
-        p[1].addStmt(p[3])
+        p[1].add_stmt(p[3])
         p[0] = p[1]
 
 def p_while_stmt(p):
@@ -340,8 +341,6 @@ def p_error(p):
         parser.errok()
     else:
         print("Syntax error at EOF")
-
-#TODO importing modules grammar parsing
 
 parser = yacc.yacc()
 

@@ -18,6 +18,6 @@ if __name__ == "__main__":
         code = f.read()
         program = ptj_parse.generateProgram(code)
         g = ptj_generator.Generator(args.output, args.type_from_name)
-        g.generateJavaCode(program)
+        g.generate_java_code(program)
 
     print args
